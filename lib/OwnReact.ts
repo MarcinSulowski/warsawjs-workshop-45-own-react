@@ -122,10 +122,19 @@ function createFiber({
   element,
   tag,
   parentFiber = null,
-  stateNode = null,
+  stateNode = null
 }): Fiber {
   console.log(['createFiber'], { element, tag, parentFiber, stateNode });
   // TODO
+  return {
+    tag,
+    stateNode,
+    type: element.type,
+    props: element.props,
+    return: parentFiber,
+    sibling: null,
+    child: null
+  }
 }
 
 /*
