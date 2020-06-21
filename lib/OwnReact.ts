@@ -79,6 +79,19 @@ zwraca dziecko Fibera po wykonaniu procesu rekoncyliacji(org. reconciliation)
 function beginWork(unitOfWork: Fiber): Fiber | null {
   console.log(['beginWork'], { unitOfWork });
   // TODO
+  switch (unitOfWork.tag) {
+    case FunctionComponent: {
+      if (typeof unitOfWork.type === 'function') {
+        reconcileChildren(unitOfWork, unitOfWork.type(unitOfWork.props))
+      }
+
+      break;
+    }
+    case HostRoot:
+    case HostComponent: {
+      reconcileChildren(unitOfWork, unitOfWork.props.children)
+    }
+  }
 
   return null;
 }
@@ -91,8 +104,8 @@ zwraca następną jednostkę pracy
 function performUnitOfWork(unitOfWork: Fiber): Fiber | null {
   console.log(['performUnitOfWork'], { unitOfWork });
   // TODO
-
-  return null;
+  let next = beginWork(unitOfWork)
+  return next;
 }
 
 /*
@@ -100,14 +113,22 @@ funkcja rozpoczyna pracę na root'cie, czyli Fiberem związanych z kontenerem ap
 efektem końcowym jest wyrenderowana aplikacja (DOM)
 */
 function performSyncWorkOnRoot(): void {
-  console.log(['performSyncWorkOnRoot']);
+  workInProgress && console.log(['performSyncWorkOnRoot']);
   // TODO
+  if (workInProgress !== null) {
+    while (workInProgress !== null) {
+      workInProgress = performUnitOfWork(workInProgress)
+    }
+  }
+
+  requestIdleCallback(performSyncWorkOnRoot)
 }
 
 // rozpoczynamy nieskończoną pętle, która sprawdza czy jest jakaś praca do wykonania
 // funkcja requestIdleCallback rejestruje do wykonania funkcję i wywołuje ją w momencie gdy przeglądarka jest bezczynna
 // docs: https://developer.mozilla.org/en-US/docs/Web/API/Window/requestIdleCallback
 // TODO
+requestIdleCallback(performSyncWorkOnRoot)
 
 /*
 funkcja tworząca nowy Fiber
