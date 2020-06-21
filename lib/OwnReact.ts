@@ -43,7 +43,7 @@ function completeUnitOfWork(unitOfWork: Fiber): Fiber | null {
   workInProgress = unitOfWork
 
   do {
-    
+
     if (workInProgress.tag === HostComponent) {
       workInProgress.stateNode = document.createElement(workInProgress.type)
     }
@@ -65,7 +65,24 @@ jako argument dostaje Fiber
 */
 function updateProperties(fiber: Fiber): void {
   console.log(['updateProperties'], { fiber });
-  // TODO
+
+  const isEvent = (key) => key.startsWith('on')
+  const isStyle = (key) => key === 'style'
+  const isTextContent = (prop) => typeof prop === 'string' || typeof prop === 'number'
+
+  Object.entries(fiber.props).forEach(([name, prop]) => {    
+    if (isEvent(name)) {
+      const eventType = name.toLowerCase().substring(2)
+      fiber.stateNode.addEventListener(eventType, fiber.props[name] as EventListenerOrEventListenerObject)
+    } else if (isTextContent(prop)) {
+      fiber.stateNode.textContent = prop as string
+    } else if (isStyle(name)) {
+      Object.entries(prop).forEach(([cssProperty, value]) => {
+        console.log(cssProperty)
+        fiber.stateNode.style[cssProperty] = value
+      })
+    }
+  })
 }
 
 /*
@@ -74,7 +91,20 @@ jako argument dostaje Fiber, który jest aktualnie iterowany podczas rekurencyjn
 */
 function commitWork(fiber: Fiber): void {
   console.log(['commitWork'], { fiber });
-  // TODO
+
+  if (fiber.stateNode !== null) {
+    let closestParentWithNode = fiber.return
+
+    while (!closestParentWithNode.stateNode) {
+      closestParentWithNode = closestParentWithNode.return
+    }
+
+    closestParentWithNode.stateNode.appendChild(fiber.stateNode)
+    updateProperties(fiber)
+  }
+
+  fiber.child && commitWork(fiber.child)
+  fiber.sibling && commitWork(fiber.sibling)
 }
 
 /*
@@ -83,7 +113,7 @@ w procesie dla wszystkich dzieci Fibera zostaną utworzone własne Fibery
 */
 function reconcileChildren(fiber: Fiber, children: unknown): void {
   console.log(['reconcileChildren'], { fiber, children });
-  // TODO
+
   if (Array.isArray(children) || typeof children === 'object') {
     let previousFiber = null
     const elements: ReactElement[] = Array.isArray(children) ? children : [children]
@@ -112,7 +142,7 @@ zwraca dziecko Fibera po wykonaniu procesu rekoncyliacji(org. reconciliation)
 */
 function beginWork(unitOfWork: Fiber): Fiber | null {
   console.log(['beginWork'], { unitOfWork });
-  // TODO
+
   switch (unitOfWork.tag) {
     case FunctionComponent: {
       if (typeof unitOfWork.type === 'function') {
@@ -136,7 +166,7 @@ zwraca następną jednostkę pracy
 */
 function performUnitOfWork(unitOfWork: Fiber): Fiber | null {
   console.log(['performUnitOfWork'], { unitOfWork });
-  // TODO
+
   let next = beginWork(unitOfWork)
 
   if (next === null) {
@@ -152,11 +182,13 @@ efektem końcowym jest wyrenderowana aplikacja (DOM)
 */
 function performSyncWorkOnRoot(): void {
   workInProgress && console.log(['performSyncWorkOnRoot']);
-  // TODO
+
   if (workInProgress !== null) {
     while (workInProgress !== null) {
       workInProgress = performUnitOfWork(workInProgress)
     }
+
+    commitWork(workInProgressRoot.child)
   }
 
   requestIdleCallback(performSyncWorkOnRoot)
@@ -184,7 +216,7 @@ function createFiber({
   stateNode = null
 }): Fiber {
   console.log(['createFiber'], { element, tag, parentFiber, stateNode });
-  // TODO
+
   return {
     tag,
     stateNode,
@@ -207,7 +239,6 @@ zwraca element React, który składa się z propsów oraz typu elementu
 */
 function createElement(type, props, ...children): ReactElement {
   console.log(['createElement'], { type, props, children });
-  // TODO
 
   return {
     type,
@@ -223,7 +254,7 @@ funkcja tworząca pierwszą jednostkę pracy, która jest związana z kontenerem
 */
 function render(element: ReactElement, container: HTMLElement) {
   console.log(['render'], { element, container });
-  // TODO
+
   workInProgressRoot = createFiber({
     tag: HostRoot,
     stateNode: container,
