@@ -40,6 +40,21 @@ tworzy ten element i zapisuje referencje w polu `stateNode`
 function completeUnitOfWork(unitOfWork: Fiber): Fiber | null {
   console.log(['completeUnitOfWork'], unitOfWork);
   // TODO
+  workInProgress = unitOfWork
+
+  do {
+    
+    if (workInProgress.tag === HostComponent) {
+      workInProgress.stateNode = document.createElement(workInProgress.type)
+    }
+
+    if (workInProgress.sibling !== null) {
+      return workInProgress.sibling
+    }
+
+    workInProgress = workInProgress.return
+
+  } while (workInProgress !== null)
 
   return null;
 }
@@ -69,6 +84,25 @@ w procesie dla wszystkich dzieci Fibera zostaną utworzone własne Fibery
 function reconcileChildren(fiber: Fiber, children: unknown): void {
   console.log(['reconcileChildren'], { fiber, children });
   // TODO
+  if (Array.isArray(children) || typeof children === 'object') {
+    let previousFiber = null
+    const elements: ReactElement[] = Array.isArray(children) ? children : [children]
+
+    elements.forEach((element, idx) => {
+      const tag = typeof element.type === 'function' ? FunctionComponent : HostComponent
+      const newFiber = createFiber({ tag, element, parentFiber: fiber})
+
+      if (idx === 0) {
+        fiber.child = newFiber
+      } else {
+        previousFiber.sibling = newFiber
+      }
+      
+      previousFiber = newFiber
+    })
+  } else {
+    fiber.child = null
+  }
 }
 
 /*
@@ -84,7 +118,6 @@ function beginWork(unitOfWork: Fiber): Fiber | null {
       if (typeof unitOfWork.type === 'function') {
         reconcileChildren(unitOfWork, unitOfWork.type(unitOfWork.props))
       }
-
       break;
     }
     case HostRoot:
@@ -93,7 +126,7 @@ function beginWork(unitOfWork: Fiber): Fiber | null {
     }
   }
 
-  return null;
+  return unitOfWork.child
 }
 
 /*
@@ -105,6 +138,11 @@ function performUnitOfWork(unitOfWork: Fiber): Fiber | null {
   console.log(['performUnitOfWork'], { unitOfWork });
   // TODO
   let next = beginWork(unitOfWork)
+
+  if (next === null) {
+    next = completeUnitOfWork(unitOfWork)
+  }
+
   return next;
 }
 
