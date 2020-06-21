@@ -165,6 +165,16 @@ funkcja tworząca pierwszą jednostkę pracy, która jest związana z kontenerem
 function render(element: ReactElement, container: HTMLElement) {
   console.log(['render'], { element, container });
   // TODO
+  workInProgressRoot = createFiber({
+    tag: HostRoot,
+    stateNode: container,
+    element: {
+      props: {
+        children: [element]
+      }
+    }
+  })
+  workInProgress = workInProgressRoot
 }
 
 /*
