@@ -140,6 +140,14 @@ zwraca element React, który składa się z propsów oraz typu elementu
 function createElement(type, props, ...children): ReactElement {
   console.log(['createElement'], { type, props, children });
   // TODO
+
+  return {
+    type,
+    props: {
+      ...(props || {}),
+      children: children.length === 1 ? children[0] : children
+    }
+  }
 }
 
 /*
